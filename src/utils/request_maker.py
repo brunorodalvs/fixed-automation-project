@@ -6,7 +6,7 @@ token_info = dict(token = None , expires = datetime.now())
 
 def request_token():
     """
-    Request a new authentication token anbd store its expiration true.
+    Request a new authentication token and store its expiration true.
     """
     global token_info
 
@@ -33,23 +33,25 @@ def get_token():
     """
     global token_info
     if datetime.now() >= token_info["expires"]:
-        return request_token()  # Request new token if the current one is expired
+        agora = datetime.now().strftime('%A, %B %d, %Y %I:%M:%S %p')
+        expires = token_info["expires"].strftime('%A, %B %d, %Y %I:%M:%S %p')
+        return request_token(), f"Expires: {expires}" , agora # Request new token if the current one is expired
     return token_info["token"]  # Return the existing token if it's still valid
 
-def make_authenticated_request(url, method='GET', data=None):
+def make_authenticated__post_request(url, data):
     """
     Make an authenticated request using the bearer token.
     """
+    
     token = get_token()
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
 
-    if method.upper() == 'POST':
-        response = requests.post(url, json=data, headers=headers)
-    elif method.upper() == 'GET':
-        response = requests.get(url, headers=headers)
-    else:
-        raise ValueError("Unsupported method")
-    return response.json()
+    response  = requests.post(url, json=data, headers=headers)
+    
+    if response.ok:
+        return response.json() # Return the JSON response if successful
+    
+    return response.raise_for_status()  # Raise an error for bad responses
